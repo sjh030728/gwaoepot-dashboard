@@ -1,0 +1,610 @@
+<title>과외팟 컨셉 대시보드</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=Noto+Sans+KR:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 흑백 에디토리얼 프레임 + 섹션마다 하나의 파스텔 컬러 블록. 흰 캔버스가 블록 사이를 항상 갈라 놓는다. (DESIGN-figma.md) */
+:root{
+  --ink:#000; --canvas:#fff; --inverse:#000; --on-inverse:#fff;
+  --hairline:#e6e6e6; --hairline-soft:#f1f1f1; --soft:#f7f7f5;
+  --lime:#dceeb1; --lilac:#c5b0f4; --cream:#f4ecd6; --pink:#efd4d4;
+  --mint:#c8e6cd; --coral:#f3c9b6; --navy:#1f1d3d; --magenta:#ff3d8b;
+  --ok:#1ea64a; --warn:#b26a00;
+  --sans:"Inter","Noto Sans KR","SF Pro Display",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  --r-md:8px; --r-lg:24px; --r-pill:50px;
+  --section:96px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--sans);font-size:18px;font-weight:320;line-height:1.45;letter-spacing:-0.26px;font-kerning:normal;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--canvas)}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media(min-width:769px){.wrap{padding-left:max(48px,env(safe-area-inset-left,0px));padding-right:max(48px,env(safe-area-inset-right,0px))}}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+/* type */
+.eyebrow{font-family:var(--mono);font-size:15px;font-weight:400;line-height:1.3;letter-spacing:.54px;text-transform:uppercase}
+.caption{font-family:var(--mono);font-size:12px;line-height:1.5;letter-spacing:.6px;text-transform:uppercase}
+.display-xl{font-size:clamp(44px,7vw,86px);font-weight:340;line-height:1.02;letter-spacing:-0.02em}
+.display-lg{font-size:clamp(34px,5vw,64px);font-weight:340;line-height:1.1;letter-spacing:-0.015em}
+.headline{font-size:26px;font-weight:540;line-height:1.35;letter-spacing:-0.26px}
+.subhead{font-size:clamp(20px,2.2vw,26px);font-weight:340;line-height:1.4;letter-spacing:-0.26px}
+.card-title{font-size:22px;font-weight:700;line-height:1.4}
+.body-lg{font-size:20px;font-weight:330;line-height:1.45;letter-spacing:-0.14px}
+.body-sm{font-size:16px;font-weight:330;line-height:1.5;letter-spacing:-0.14px}
+.strong{font-weight:540}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--canvas);border-bottom:1px solid var(--hairline-soft)}
+.nav .wrap{height:60px;display:flex;align-items:center;gap:24px}
+.logo{font-size:24px;font-weight:700;letter-spacing:-0.6px;text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo i{display:inline-grid;grid-template-columns:repeat(2,9px);gap:3px}
+.logo i b{width:9px;height:9px;border-radius:3px;display:block}
+.navlinks{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{font-size:15px;font-weight:450;text-decoration:none;padding:8px 12px;border-radius:9999px;white-space:nowrap}
+.navlinks a:hover{background:var(--soft)}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:480;letter-spacing:-0.1px;border-radius:var(--r-pill);padding:10px 20px;text-decoration:none;white-space:nowrap;border:0}
+.pill-primary{background:var(--ink);color:var(--canvas)}
+.pill-secondary{background:var(--canvas);color:var(--ink)}
+@media(max-width:960px){.navlinks{display:none}.nav .pill{margin-left:auto}}
+
+/* marquee */
+.marquee{background:var(--inverse);color:var(--on-inverse);height:40px;overflow:hidden;display:flex;align-items:center}
+.marquee-track{display:flex;gap:40px;white-space:nowrap;animation:roll 38s linear infinite;padding-left:40px}
+.marquee-track span{font-size:15px;font-weight:400;display:flex;align-items:center;gap:40px}
+.marquee-track span::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--lime)}
+@keyframes roll{to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.marquee-track{animation:none}}
+
+/* sections */
+.sec{padding-block:var(--section) 0}
+.sec:last-of-type{padding-bottom:var(--section)}
+.sec-head{display:grid;gap:16px;margin-bottom:40px;max-width:860px}
+.block{border-radius:var(--r-lg);padding:48px}
+.block-lime{background:var(--lime)}.block-lilac{background:var(--lilac)}.block-cream{background:var(--cream)}
+.block-mint{background:var(--mint)}.block-pink{background:var(--pink)}.block-coral{background:var(--coral)}
+.block-navy{background:var(--navy);color:var(--on-inverse)}
+@media(max-width:768px){
+  .block{border-radius:0;padding:40px max(16px,env(safe-area-inset-left,0px)) 40px;margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)))}
+  :root{--section:64px}
+}
+
+/* hero */
+.hero{padding-block:72px 64px;display:grid;gap:28px}
+.hero .lead{max-width:640px}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px}
+.hero-tag{display:inline-flex;align-items:center;gap:10px;background:var(--lilac);border-radius:var(--r-md);padding:10px 16px;font-size:15px;font-weight:450;width:fit-content}
+.hero-tag b{background:var(--magenta);color:#fff;border-radius:var(--r-pill);padding:3px 10px;font-weight:540;font-size:13px}
+
+/* KPI tiles */
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--hairline);border:1px solid var(--hairline);border-radius:var(--r-lg);overflow:hidden}
+.kpi{background:var(--canvas);padding:24px 24px 22px;display:grid;gap:8px;align-content:start;min-width:0}
+.kpi .val{font-size:clamp(36px,4vw,52px);font-weight:340;letter-spacing:-0.03em;line-height:1}
+.kpi .val small{font-size:.42em;font-weight:450;letter-spacing:-0.2px;margin-left:4px}
+.kpi .lbl{font-size:16px;font-weight:450}
+.kpi .src{font-size:13px;font-weight:330;color:var(--ink)}
+.kpi .dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:8px;vertical-align:1px}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.kpis{grid-template-columns:minmax(0,1fr)}}
+
+/* generic grids & cards */
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media(max-width:960px){.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){.grid-2,.grid-4{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:24px;display:grid;gap:10px;align-content:start;min-width:0}
+.tile{background:var(--soft);border-radius:var(--r-md);padding:24px;display:grid;gap:10px;align-content:start;min-width:0}
+.on-block{background:rgba(255,255,255,.62);border-radius:var(--r-md);padding:24px;display:grid;gap:10px;align-content:start;min-width:0}
+.note{font-size:14px;font-weight:330;line-height:1.5}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;letter-spacing:.5px;text-transform:uppercase;border-radius:var(--r-pill);padding:4px 10px;width:fit-content;border:1px solid currentColor}
+.chip-ok{color:var(--ok)}
+.chip-warn{color:var(--warn)}
+.chip-ink{background:var(--ink);color:var(--canvas);border-color:var(--ink)}
+.chip svg{width:12px;height:12px}
+
+/* quote */
+.quote{font-size:clamp(30px,4.4vw,56px);font-weight:340;line-height:1.18;letter-spacing:-0.02em;max-width:900px}
+.moments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:40px}
+@media(max-width:640px){.moments{grid-template-columns:minmax(0,1fr)}}
+
+/* price bars */
+.compare{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;align-items:center}
+@media(max-width:900px){.compare{grid-template-columns:minmax(0,1fr);gap:32px}}
+.big-x{font-size:clamp(96px,15vw,200px);font-weight:340;letter-spacing:-0.05em;line-height:.9}
+.bars{display:grid;gap:28px}
+.bar-row{display:grid;gap:10px}
+.bar-meta{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.bar-track{height:44px;border-radius:var(--r-pill);background:var(--soft);position:relative;overflow:hidden}
+.bar-fill{position:absolute;inset:0 auto 0 0;border-radius:var(--r-pill)}
+.bar-range{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,var(--ink) 0 2px,transparent 2px 6px);opacity:.35}
+.axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;letter-spacing:.4px;padding-inline:2px}
+
+/* options A/B/C */
+.opt{display:grid;gap:12px}
+.opt-letter{width:48px;height:48px;border-radius:50%;background:var(--ink);color:var(--canvas);display:grid;place-items:center;font-size:20px;font-weight:540}
+.tradeoff{display:grid;gap:6px;font-size:15px;font-weight:400}
+.tradeoff div{display:flex;gap:8px;align-items:flex-start}
+.tradeoff svg{flex:none;width:18px;height:18px;margin-top:2px}
+.gap-callout{margin-top:16px;background:var(--ink);color:var(--canvas);border-radius:var(--r-md);padding:24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.gap-callout .eyebrow{color:var(--lilac)}
+
+/* market */
+.market{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center}
+@media(max-width:900px){.market{grid-template-columns:minmax(0,1fr)}}
+.sq-wrap{position:relative;width:min(100%,420px);aspect-ratio:1;max-width:100%}
+.sq-big{position:absolute;inset:0;background:var(--coral);border-radius:var(--r-md);padding:24px;display:flex;flex-direction:column;justify-content:flex-start;gap:6px}
+.sq-small{position:absolute;right:0;bottom:0;width:6%;aspect-ratio:1;background:var(--ink);border-radius:2px}
+.sq-label{position:absolute;right:8%;bottom:0;text-align:right;font-size:14px;font-weight:450;line-height:1.35}
+.sq-label .caption{display:block}
+.mstats{display:grid;gap:16px}
+.mstat{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:baseline;padding-bottom:16px;border-bottom:1px solid var(--hairline)}
+.mstat .v{font-size:32px;font-weight:340;letter-spacing:-0.02em;min-width:150px}
+.warn-box{border:1.5px dashed var(--ink);border-radius:var(--r-md);padding:16px 20px;display:flex;gap:12px;align-items:flex-start}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r-md)}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th,td{text-align:left;padding:16px 18px;vertical-align:top;font-size:16px;line-height:1.45}
+th{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.6px;text-transform:uppercase}
+.navy-tbl th{color:var(--lilac);border-bottom:1px solid rgba(255,255,255,.28)}
+.navy-tbl td{border-bottom:1px solid rgba(255,255,255,.12)}
+.navy-tbl td.svc{font-weight:600;font-size:18px}
+.type-pill{display:inline-block;border-radius:var(--r-pill);padding:3px 12px;font-size:13px;font-weight:540;white-space:nowrap}
+.tp-broker{background:var(--mint);color:var(--ink)}
+.tp-managed{background:var(--lilac);color:var(--ink)}
+.legend-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:32px}
+@media(max-width:640px){.legend-split{grid-template-columns:minmax(0,1fr)}}
+.legend-card{border:1px solid rgba(255,255,255,.22);border-radius:var(--r-md);padding:20px;display:grid;gap:8px}
+.legend-card .cnt{font-size:44px;font-weight:340;letter-spacing:-0.02em;line-height:1}
+.navy-note{font-size:14px;margin-top:20px;color:var(--on-inverse);opacity:.85}
+
+.diff-tbl th{border-bottom:1.5px solid var(--ink)}
+.diff-tbl td{border-bottom:1px solid rgba(0,0,0,.12)}
+.diff-tbl td:first-child{font-weight:540}
+.diff-tbl td:last-child{background:rgba(255,255,255,.6);font-weight:450}
+.diff-tbl th:last-child{background:var(--ink);color:var(--canvas)}
+
+/* solution flow */
+.flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;position:relative}
+@media(max-width:960px){.flow{grid-template-columns:minmax(0,1fr)}}
+.step{background:var(--canvas);border-radius:var(--r-md);padding:24px;display:grid;gap:14px;align-content:start;min-width:0;position:relative}
+.step .no{font-family:var(--mono);font-size:13px;letter-spacing:.6px}
+.step .why{border-top:1px solid var(--hairline);padding-top:14px;font-size:15px;font-weight:400}
+.viz{height:76px;display:flex;align-items:center;gap:8px}
+.lv{display:flex;gap:6px;align-items:flex-end;height:64px}
+.lv span{width:30px;border-radius:6px 6px 2px 2px;display:grid;place-items:center;font-size:12px;font-weight:540;color:var(--ink)}
+.seats{display:flex;gap:8px}
+.seat{width:34px;height:34px;border-radius:50%;background:var(--ink)}
+.seat.empty{background:transparent;border:2px dashed var(--ink);display:grid;place-items:center;font-size:18px;font-weight:540}
+.split{display:flex;gap:6px;align-items:center}
+.split .home{width:30px;height:30px;border-radius:6px;background:var(--mint);border:1.5px solid var(--ink)}
+.split .arrow{font-size:20px}
+.split .tch{width:40px;height:40px;border-radius:50%;background:var(--ink)}
+.one-line{margin-top:24px;background:rgba(255,255,255,.62);border-radius:var(--r-md);padding:20px 24px;font-size:18px;font-weight:400}
+
+/* value bars */
+.value{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media(max-width:820px){.value{grid-template-columns:minmax(0,1fr)}}
+.vcard{border:1px solid var(--hairline);border-radius:var(--r-lg);padding:28px;display:grid;gap:18px;align-content:start;min-width:0}
+.vcard .v{font-size:clamp(56px,8vw,96px);font-weight:340;letter-spacing:-0.04em;line-height:.95}
+.vbars{display:grid;gap:10px}
+.vbar{display:grid;grid-template-columns:96px minmax(0,1fr) 64px;gap:12px;align-items:center;font-size:14px;font-weight:450}
+.vbar .t{height:28px;background:var(--soft);border-radius:var(--r-pill);overflow:hidden}
+.vbar .f{height:100%;border-radius:var(--r-pill)}
+.vbar .n{text-align:right}
+
+/* concept sentence */
+.concept{font-size:clamp(20px,2.3vw,28px);font-weight:340;line-height:1.55;letter-spacing:-0.3px;max-width:1000px}
+.concept mark{background:none;color:inherit;font-weight:540;box-shadow:inset 0 -0.42em 0 var(--hl,var(--lime))}
+.ckey{border-radius:var(--r-md);padding:20px;display:grid;gap:8px;min-width:0}
+
+/* next steps */
+.check{display:grid;gap:12px}
+.check .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.check .q{font-size:21px;font-weight:540;line-height:1.35}
+
+/* closing */
+.closing{background:var(--inverse);color:var(--on-inverse);margin-top:var(--section)}
+.closing .wrap{padding-block:80px;display:grid;gap:24px}
+.closing .display-xl span{color:var(--lime)}
+.closing .pill-secondary{background:var(--canvas);color:var(--ink)}
+.closing .src{font-size:13px;line-height:1.6;opacity:.8;max-width:900px;border-top:1px solid rgba(255,255,255,.2);padding-top:24px}
+</style>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="과외팟 처음으로">
+      <i aria-hidden="true"><b style="background:var(--lime)"></b><b style="background:var(--lilac)"></b><b style="background:var(--coral)"></b><b style="background:var(--ink);border:2px dashed var(--ink);background:transparent"></b></i>과외팟
+    </a>
+    <nav class="navlinks" aria-label="섹션">
+      <a href="#customer">목표고객</a>
+      <a href="#problem">고객문제</a>
+      <a href="#market">시장·경쟁</a>
+      <a href="#solution">솔루션</a>
+      <a href="#value">기대효과</a>
+      <a href="#next">다음 단계</a>
+    </nav>
+    <a class="pill pill-primary" href="#concept">컨셉 한 문장</a>
+  </div>
+</header>
+
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span>빈자리는 충원</span><span>레벨테스트 15~20문항</span><span>수준 맞는 2~4명</span><span>가정별 분할 결제</span><span>선생님은 한 번에 정산</span><span>학원비 수준, 월 25만 원 안팎</span>
+    <span>빈자리는 충원</span><span>레벨테스트 15~20문항</span><span>수준 맞는 2~4명</span><span>가정별 분할 결제</span><span>선생님은 한 번에 정산</span><span>학원비 수준, 월 25만 원 안팎</span>
+  </div>
+</div>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="wrap hero">
+    <p class="eyebrow">쉬운 AI 창업 · Concept Modeling</p>
+    <h1 class="display-xl">수준 맞는 소그룹<br>과외 매칭 서비스</h1>
+    <p class="body-lg lead">학원비 정도의 비용으로, 비슷한 수준의 아이들 2~4명이 함께 받는 과외식 관리. 과외팟의 고객·문제·시장·솔루션을 한 화면씩 정리했습니다.</p>
+    <div class="cta-row">
+      <a class="pill pill-primary" href="#solution">솔루션 보기</a>
+      <a class="pill pill-secondary" style="border:1px solid var(--hairline)" href="#next">BM 전 확인할 것</a>
+    </div>
+
+    <div class="kpis" role="list" aria-label="핵심 수치">
+      <div class="kpi" role="listitem"><span class="lbl"><i class="dot" style="background:var(--lime)"></i>중학생 월평균 사교육비</span><span class="val num">63.2<small>만 원</small></span><span class="src">사교육 참여 중학생, 전 과목 · 팀 조사</span></div>
+      <div class="kpi" role="listitem"><span class="lbl"><i class="dot" style="background:var(--lilac)"></i>1:1 과외 vs 학원, 시간당</span><span class="val num">2.4<small>배</small></span><span class="src">학원 약 1.25만 원 · 1:1 약 3만 원</span></div>
+      <div class="kpi" role="listitem"><span class="lbl"><i class="dot" style="background:var(--coral)"></i>전체 사교육비 · 2025</span><span class="val num">27.5<small>조 원</small></span><span class="src">전년 대비 5.7% 감소 · 교육부·통계청</span></div>
+      <div class="kpi" role="listitem"><span class="lbl"><i class="dot" style="background:var(--mint)"></i>그룹 정원</span><span class="val num">2~4<small>명</small></span><span class="src">레벨테스트로 수준(상·중·하) 맞춤</span></div>
+      <div class="kpi" role="listitem"><span class="lbl"><i class="dot" style="background:var(--cream);border:1px solid var(--ink)"></i>학부모 비용 절감</span><span class="val num">약 30<small>%</small></span><span class="src">1:1 과외 대비 · 팀 추정치</span></div>
+      <div class="kpi" role="listitem"><span class="lbl"><i class="dot" style="background:var(--pink)"></i>선생님 시간당 수입</span><span class="val num">약 2<small>배</small></span><span class="src">학생 3명 그룹 기준 · 팀 추정치</span></div>
+    </div>
+  </section>
+
+  <!-- ① CUSTOMER -->
+  <section class="wrap sec" id="customer">
+    <div class="sec-head">
+      <p class="eyebrow">① 목표고객</p>
+      <h2 class="display-lg">학원비를 내면서도<br>관리가 아쉬운 학부모</h2>
+    </div>
+    <div class="grid-4">
+      <article class="tile">
+        <span class="caption">핵심 목표고객</span>
+        <p class="body-sm">학원 대신 과외로 관리받게 하고 싶지만, <b class="strong">1:1 과외비가 부담스러운</b> 학부모</p>
+      </article>
+      <article class="tile">
+        <span class="caption">주요 특성</span>
+        <p class="body-sm">이미 사교육에 큰돈을 쓴다. 사교육 참여 중학생 월평균 <b class="strong num">63.2만 원</b>(전 과목)</p>
+      </article>
+      <article class="tile">
+        <span class="caption">주요 사용 상황</span>
+        <p class="body-sm"><b class="strong">중간·기말고사 성적표</b>를 받은 직후, 학원에서 과외로 옮길지 고민할 때</p>
+      </article>
+      <article class="tile">
+        <span class="caption">초기 핵심 고객</span>
+        <p class="body-sm"><b class="strong">중학생 학부모</b>, 지역 제한 없음. 내신이 절대평가라 학교가 달라도 한 그룹으로 묶을 수 있다</p>
+      </article>
+    </div>
+    <p class="note" style="margin-top:16px">63.2만 원: 사교육 참여 중학생 월평균(전 과목), 팀 조사값. 발표 때 통계 기준연도를 함께 표기할 것.</p>
+  </section>
+
+  <!-- ② PROBLEM -->
+  <section class="wrap sec" id="problem">
+    <div class="block block-lime">
+      <p class="eyebrow" style="margin-bottom:24px">② 고객문제</p>
+      <p class="quote">“학원은 아이를 일일이 못 챙기는데, 1:1 과외는 너무 비싸요”</p>
+      <div class="moments">
+        <div class="on-block"><span class="caption">문제가 생기는 순간 1</span><p class="headline">시험 성적이 기대보다 낮게 나왔을 때</p></div>
+        <div class="on-block"><span class="caption">문제가 생기는 순간 2</span><p class="headline">학원 수업에서 아이가 개별 관리를 못 받는다고 느낄 때</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② SEVERITY -->
+  <section class="wrap sec">
+    <div class="compare">
+      <div style="display:grid;gap:20px">
+        <p class="eyebrow">② 문제의 심각성</p>
+        <p class="big-x num">2.4×</p>
+        <h2 class="subhead">1:1 과외는 학원보다 <b class="strong">시간당 약 2.4배</b> 비싸다</h2>
+      </div>
+      <div class="bars" role="img" aria-label="시간당 비용 비교: 학원 약 1.2만~1.3만 원, 대학생 1:1 과외 약 3만 원">
+        <div class="bar-row">
+          <div class="bar-meta"><span class="card-title">학원</span><span class="body-sm num">약 1.2만~1.3만 원 / 시간</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--lime)"></div><div class="bar-range" style="left:40%;width:3.4%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-meta"><span class="card-title">대학생 1:1 과외</span><span class="body-sm num">약 3만 원 / 시간</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--ink)"></div></div>
+        </div>
+        <div class="axis num" aria-hidden="true"><span>0</span><span>1만</span><span>2만</span><span>3만 원</span></div>
+        <p class="note">공개 시세 기준(팀 조사) · 학원비는 시간당으로 환산 · 지역·과목별 편차가 있음. 빗금은 학원비 범위.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② CURRENT OPTIONS -->
+  <section class="wrap sec">
+    <div class="block block-lilac">
+      <div class="sec-head" style="margin-bottom:32px">
+        <p class="eyebrow">② 현재 해결 방식</p>
+        <h2 class="display-lg">지금의 선택지는<br>모두 하나씩 아쉽다</h2>
+      </div>
+      <div class="grid-3">
+        <article class="on-block opt">
+          <span class="opt-letter">A</span>
+          <h3 class="headline">1:1 과외로 옮긴다</h3>
+          <div class="tradeoff">
+            <div><svg viewBox="0 0 18 18" fill="none" stroke="var(--ok)" stroke-width="2.2"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>관리는 된다</div>
+            <div><svg viewBox="0 0 18 18" fill="none" stroke="var(--ink)" stroke-width="2.2"><path d="M4 4l10 10M14 4L4 14"/></svg>비용이 학원의 약 2.4배</div>
+          </div>
+        </article>
+        <article class="on-block opt">
+          <span class="opt-letter">B</span>
+          <h3 class="headline">학원에 남는다</h3>
+          <div class="tradeoff">
+            <div><svg viewBox="0 0 18 18" fill="none" stroke="var(--ok)" stroke-width="2.2"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>비용은 맞다</div>
+            <div><svg viewBox="0 0 18 18" fill="none" stroke="var(--ink)" stroke-width="2.2"><path d="M4 4l10 10M14 4L4 14"/></svg>개별 관리가 계속 아쉽다</div>
+          </div>
+        </article>
+        <article class="on-block opt">
+          <span class="opt-letter">C</span>
+          <h3 class="headline">학부모끼리 그룹을 짠다</h3>
+          <div class="tradeoff">
+            <div><svg viewBox="0 0 18 18" fill="none" stroke="var(--ok)" stroke-width="2.2"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>소그룹 관리가 된다</div>
+            <div><svg viewBox="0 0 18 18" fill="none" stroke="var(--ink)" stroke-width="2.2"><path d="M4 4l10 10M14 4L4 14"/></svg>한 명이 빠지면 그룹이 통째로 깨진다</div>
+          </div>
+        </article>
+      </div>
+      <div class="gap-callout">
+        <span class="eyebrow">빈틈</span>
+        <p class="body-lg" style="flex:1;min-width:240px">학원비 수준으로, 수준이 맞고, 깨지지 않는 소그룹 과외는 아직 없다</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARKET -->
+  <section class="wrap sec" id="market">
+    <div class="sec-head">
+      <p class="eyebrow">시장 규모</p>
+      <h2 class="display-lg">사교육비 27.5조 원 ≠<br>과외 플랫폼 시장</h2>
+    </div>
+    <div class="market">
+      <div class="sq-wrap" role="img" aria-label="면적 비교: 전체 사교육비 27.5조 원 대비 과외 플랫폼 거래액 약 천억 원대">
+        <div class="sq-big">
+          <span class="caption">전체 사교육비 · 2025년</span>
+          <span class="num" style="font-size:clamp(40px,6vw,64px);font-weight:340;letter-spacing:-0.03em;line-height:1">27.5조 원</span>
+        </div>
+        <div class="sq-small"></div>
+        <div class="sq-label"><span class="caption">과외 플랫폼</span>~천억 원대</div>
+      </div>
+      <div class="mstats">
+        <p class="note">왼쪽 두 사각형은 면적 비율입니다. 천억 원(0.1조)은 27.5조의 약 0.4%.</p>
+        <div class="mstat"><span class="v num">27.5조</span><span class="body-sm">초·중·고 사교육비 총액, 전년 대비 <b class="strong">5.7% 감소</b>. 학원·개인과외·그룹과외·인터넷교육을 모두 더한 값</span></div>
+        <div class="mstat"><span class="v num">약 800억</span><span class="body-sm">김과외 2023년 거래액</span></div>
+        <div class="mstat"><span class="v num">1,239억</span><span class="body-sm">설탭 누적 매출(2019~2024)</span></div>
+        <div class="warn-box">
+          <span class="chip chip-warn">주의</span>
+          <p class="body-sm">플랫폼만 따로 집계한 공식 통계는 없다. 사교육비 전체로 보면 과대평가된다.</p>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:24px">출처: 교육부·통계청 초중고 사교육비조사(2025) · 김과외 거래액 아시아경제 보도 · 설탭 누적 매출 오누이 발표(2025.01)</p>
+  </section>
+
+  <!-- COMPETITION -->
+  <section class="wrap sec">
+    <div class="block block-navy">
+      <div class="sec-head" style="margin-bottom:32px">
+        <p class="eyebrow" style="color:var(--lilac)">경쟁 환경</p>
+        <h2 class="display-lg">과외 플랫폼은 중개형과<br>관리형으로 나뉜다</h2>
+      </div>
+      <div class="legend-split">
+        <div class="legend-card"><span class="type-pill tp-broker">중개형</span><span class="cnt num">3</span><span class="body-sm">김과외 · 숨고 · 당근. 연결만 하고 수수료·이용료를 받는다</span></div>
+        <div class="legend-card"><span class="type-pill tp-managed">관리형</span><span class="cnt num">2</span><span class="body-sm">설탭 · 콴다과외. 회사가 튜터를 선발하고 수업료를 정한다</span></div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="navy-tbl">
+          <thead><tr><th>유형</th><th>서비스</th><th>돈을 받는 방식</th><th>특징</th></tr></thead>
+          <tbody>
+            <tr><td><span class="type-pill tp-broker">중개형</span></td><td class="svc">김과외</td><td>과외 성사 시 교사가 첫 달 수업료의 <b>25%</b></td><td>국내 최대 과외 중개, 강사 대부분이 대학생</td></tr>
+            <tr><td><span class="type-pill tp-broker">중개형</span></td><td class="svc">숨고</td><td>견적을 보낼 때 캐시 차감, 성사 수수료 없음</td><td>분야가 넓고 견적 비교가 쉬움</td></tr>
+            <tr><td><span class="type-pill tp-broker">중개형</span></td><td class="svc">당근</td><td>중개 수수료 없음</td><td>가깝지만 신원 검증 장치가 약함</td></tr>
+            <tr><td><span class="type-pill tp-managed">관리형</span></td><td class="svc">설탭</td><td>월 구독료(<b>19.9만 원</b>부터)</td><td>태블릿 1:1, 누적 학생 5만 명 이상</td></tr>
+            <tr><td><span class="type-pill tp-managed">관리형</span></td><td class="svc">콴다과외</td><td>회사가 튜터를 관리하고 수업료를 정함</td><td>문제 풀이 앱에서 1:1 과외로 연결</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="navy-note">수수료·가격은 각사 공개자료 기준이며 정책은 바뀔 수 있음. 다섯 곳 모두 1:1 연결 구조.</p>
+    </div>
+  </section>
+
+  <!-- TEACHER SIDE -->
+  <section class="wrap sec">
+    <div class="sec-head">
+      <p class="eyebrow">선생님 쪽 시장</p>
+      <h2 class="display-lg">선생님이 기존 플랫폼에<br>느끼는 불만이 기회다</h2>
+    </div>
+    <div class="grid-3">
+      <article class="card">
+        <span class="chip chip-ok"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6.5l2.5 2.5L10 3"/></svg>확인됨</span>
+        <h3 class="card-title">수수료 부담</h3>
+        <p class="body-sm">김과외는 과외가 성사되면 첫 달 수업료의 25%를 교사가 낸다</p>
+        <p class="note">공개 약관·앱 정보로 확인</p>
+      </article>
+      <article class="card">
+        <span class="chip chip-warn">확인 필요</span>
+        <h3 class="card-title">통제·감시 논란</h3>
+        <p class="body-sm">외부 연락 제한, 미신고 시 위약금·계정 정지가 과하다는 지적</p>
+        <p class="note">전문가 주장 · 원 기사 확인 필요</p>
+      </article>
+      <article class="card">
+        <span class="chip chip-warn">확인 필요</span>
+        <h3 class="card-title">정보 비대칭</h3>
+        <p class="body-sm">교사는 사진·학교·학과를 공개하지만 학부모 쪽 인증은 가볍다는 지적</p>
+        <p class="note">전문가 주장 · 원 기사 확인 필요</p>
+      </article>
+    </div>
+    <div class="tile" style="margin-top:16px;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:20px">
+      <span class="chip chip-ink">과외팟이 내세울 것</span>
+      <p class="body-lg">투명한 정산 · 낮은 수수료 · 단계별 정보 공개 · 같은 시간에 더 많은 수입</p>
+    </div>
+  </section>
+
+  <!-- ③ SOLUTION -->
+  <section class="wrap sec" id="solution">
+    <div class="block block-mint">
+      <div class="sec-head" style="margin-bottom:32px">
+        <p class="eyebrow">③ 핵심 솔루션</p>
+        <h2 class="display-lg">수준이 맞는 2~4명을 묶고,<br>끝까지 유지한다</h2>
+      </div>
+      <div class="flow">
+        <article class="step">
+          <span class="no">STEP 01</span>
+          <div class="viz" aria-hidden="true">
+            <div class="lv"><span style="height:64px;background:var(--lime)">상</span><span style="height:44px;background:var(--cream)">중</span><span style="height:26px;background:var(--pink)">하</span></div>
+          </div>
+          <h3 class="card-title">레벨테스트</h3>
+          <p class="body-sm">15~20문항으로 수준(상·중·하)을 판정</p>
+          <p class="why">비슷한 수준끼리만 묶여 진도가 갈리지 않는다</p>
+        </article>
+        <article class="step">
+          <span class="no">STEP 02</span>
+          <div class="viz" aria-hidden="true">
+            <div class="seats"><span class="seat"></span><span class="seat"></span><span class="seat"></span><span class="seat empty">+</span></div>
+          </div>
+          <h3 class="card-title">그룹 구성·충원</h3>
+          <p class="body-sm">2~4명 그룹을 짜고, 빈자리는 대기 학생으로 채움</p>
+          <p class="why">팀을 직접 짤 필요가 없고, 한 명이 빠져도 그룹이 유지된다</p>
+        </article>
+        <article class="step">
+          <span class="no">STEP 03</span>
+          <div class="viz" aria-hidden="true">
+            <div class="split"><span style="display:grid;gap:4px"><span class="home"></span><span class="home"></span></span><span class="split"><span class="home"></span></span><span class="arrow">→</span><span class="tch"></span></div>
+          </div>
+          <h3 class="card-title">분할 결제·정산</h3>
+          <p class="body-sm">가정마다 따로 결제, 선생님은 한 번에 정산</p>
+          <p class="why">다른 집과 돈 얘기를 할 필요가 없다</p>
+        </article>
+      </div>
+      <p class="one-line">레벨테스트로 수준이 맞는 학생을 묶어 선생님과 연결하고, 빈자리 충원과 분할 결제까지 맡는 소그룹 과외 매칭 서비스</p>
+    </div>
+  </section>
+
+  <!-- ③ VALUE -->
+  <section class="wrap sec" id="value">
+    <div class="sec-head">
+      <p class="eyebrow">③ 고객 기대효과</p>
+      <h2 class="display-lg">학부모는 덜 내고,<br>선생님은 더 번다</h2>
+    </div>
+    <div class="value">
+      <article class="vcard">
+        <span class="caption">학부모</span>
+        <p class="v num">−30%</p>
+        <p class="body-lg">1:1 과외보다 약 30% 저렴. <b class="strong">월 25만 원 안팎</b>, 학원비 수준</p>
+        <div class="vbars" role="img" aria-label="학부모 부담 비교: 1:1 과외 100, 과외팟 약 70">
+          <div class="vbar"><span>1:1 과외</span><span class="t"><span class="f" style="display:block;width:100%;background:var(--ink)"></span></span><span class="n num">100</span></div>
+          <div class="vbar"><span>과외팟</span><span class="t"><span class="f" style="display:block;width:70%;background:var(--lime)"></span></span><span class="n num">약 70</span></div>
+        </div>
+      </article>
+      <article class="vcard">
+        <span class="caption">선생님</span>
+        <p class="v num">×2</p>
+        <p class="body-lg">같은 시간에 버는 수입이 약 2배. <b class="strong">학생 3명 그룹</b> 기준</p>
+        <div class="vbars" role="img" aria-label="선생님 시간당 수입 비교: 1:1 과외 1배, 과외팟 약 2배">
+          <div class="vbar"><span>1:1 과외</span><span class="t"><span class="f" style="display:block;width:50%;background:var(--ink)"></span></span><span class="n num">1×</span></div>
+          <div class="vbar"><span>과외팟</span><span class="t"><span class="f" style="display:block;width:100%;background:var(--pink)"></span></span><span class="n num">약 2×</span></div>
+        </div>
+      </article>
+    </div>
+    <p class="note" style="margin-top:16px">팀 추정치(Concept Modeling ③). 실제 수업료와 수수료 구조는 BM 단계에서 확정.</p>
+  </section>
+
+  <!-- ④ DIFFERENTIATION -->
+  <section class="wrap sec">
+    <div class="block block-cream">
+      <div class="sec-head" style="margin-bottom:32px">
+        <p class="eyebrow">④ 차별적 가치</p>
+        <h2 class="display-lg">과외 앱은 1:1만 잇고,<br>과외팟은 그룹을 짜고 지킨다</h2>
+      </div>
+      <div class="tbl-wrap">
+        <table class="diff-tbl">
+          <thead><tr><th>기존 대안</th><th>한계</th><th>과외팟은</th></tr></thead>
+          <tbody>
+            <tr><td>학원</td><td>정원이 커서 개별 관리가 어렵다</td><td>2~4명 소그룹으로 과외식 관리</td></tr>
+            <tr><td>1:1 과외 앱(김과외·숨고)</td><td>1:1만 연결해 비용이 높다</td><td>1:1보다 약 30% 저렴</td></tr>
+            <tr><td>온라인 1:1(콴다과외)</td><td>역시 1:1 비용 구조</td><td>학원비 수준의 월 비용</td></tr>
+            <tr><td>소수정예 공부방</td><td>선생님과 장소가 고정돼 있다</td><td>수준에 맞는 선생님·그룹을 연결</td></tr>
+            <tr><td>학부모가 직접 짠 그룹</td><td>한 명이 빠지면 깨진다</td><td>대기 학생으로 빈자리 충원</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="gap-callout">
+        <span class="eyebrow" style="color:var(--lime)">선택 이유</span>
+        <p class="body-lg" style="flex:1;min-width:240px">학원비 정도로, 비슷한 수준의 아이들끼리 과외식 소수 관리를 받는다</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑤ CONCEPT -->
+  <section class="wrap sec" id="concept">
+    <div class="sec-head">
+      <p class="eyebrow">⑤ 창업 아이템 컨셉</p>
+      <h2 class="display-lg">과외팟을 한 문장으로</h2>
+    </div>
+    <p class="concept">우리의 소그룹 과외 매칭 서비스 ‘과외팟’은 <mark style="--hl:var(--lime)">학원 대신 과외를 원하지만 1:1 비용이 부담스러운 학부모</mark>가 겪는 <mark style="--hl:var(--pink)">학원은 관리가 안 되고 1:1은 비싼 문제</mark>를, <mark style="--hl:var(--mint)">수준이 맞는 학생 2~4명을 묶어 선생님과 연결하고 빈자리 충원과 분할 결제까지 맡는 방식</mark>으로 해결하며, <mark style="--hl:var(--lilac)">학부모는 학원비 수준으로 과외식 관리를, 선생님은 같은 시간에 더 많은 수입</mark>을 얻는 가치를 제공한다.</p>
+    <div class="grid-4" style="margin-top:40px">
+      <div class="ckey" style="background:var(--lime)"><span class="caption">고객</span><p class="body-sm strong">1:1 비용이 부담스러운 학부모</p></div>
+      <div class="ckey" style="background:var(--pink)"><span class="caption">문제</span><p class="body-sm strong">학원은 관리가 안 되고, 1:1은 비싸다</p></div>
+      <div class="ckey" style="background:var(--mint)"><span class="caption">솔루션</span><p class="body-sm strong">레벨테스트 · 그룹 충원 · 분할 결제</p></div>
+      <div class="ckey" style="background:var(--lilac)"><span class="caption">가치</span><p class="body-sm strong">학원비로 받는 과외식 소수 관리</p></div>
+    </div>
+  </section>
+
+  <!-- NEXT -->
+  <section class="wrap sec" id="next">
+    <div class="block block-pink">
+      <div class="sec-head" style="margin-bottom:32px">
+        <p class="eyebrow">다음 단계</p>
+        <h2 class="display-lg">BM 단계 전에 확인할 것</h2>
+      </div>
+      <div class="grid-2">
+        <article class="on-block check">
+          <div class="top"><span class="caption">01 · 운영 방식</span><span class="chip">확인 전</span></div>
+          <h3 class="q">중개형인가, 관리형인가</h3>
+          <p class="body-sm">수업료를 누가 정하는지부터 정한다. 그래야 경쟁 상대가 김과외인지 설탭인지 정해진다</p>
+        </article>
+        <article class="on-block check">
+          <div class="top"><span class="caption">02 · 수요</span><span class="chip">확인 전</span></div>
+          <h3 class="q">실제 수요 확인</h3>
+          <p class="body-sm">중학생 학부모 설문·인터뷰로 과외 형태별 선호와 지출을 확인한다</p>
+        </article>
+        <article class="on-block check">
+          <div class="top"><span class="caption">03 · 지표</span><span class="chip">확인 전</span></div>
+          <h3 class="q">가입자 대신 실질 지표</h3>
+          <p class="body-sm">활성 이용자·거래 건수·거래액으로 시장과 경쟁사를 본다</p>
+        </article>
+        <article class="on-block check">
+          <div class="top"><span class="caption">04 · 규제</span><span class="chip">확인 전</span></div>
+          <h3 class="q">규제 점검</h3>
+          <p class="body-sm">학원법의 개인과외 신고와 대학생 예외, 현직 교원 과외 금지가 소그룹에 어떻게 적용되는지 본다</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="closing">
+  <div class="wrap">
+    <p class="eyebrow" style="color:var(--lime)">과외팟</p>
+    <p class="display-xl">학원비로 받는<br><span>과외식 관리</span></p>
+    <p class="body-lg">수준 맞는 2~4명 · 빈자리 충원 · 분할 결제</p>
+    <div class="cta-row"><a class="pill pill-secondary" href="#top">처음으로</a></div>
+    <p class="src">출처: 교육부·통계청 초중고 사교육비조사(2025) · 김과외 거래액 아시아경제 보도 · 설탭 누적 매출 오누이 발표(2025.01) · 각사 공개 약관 및 앱 정보. 63.2만 원, 시간당 비용, 기대효과 수치는 팀 조사·추정치.</p>
+  </div>
+</footer>
